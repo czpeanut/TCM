@@ -6,8 +6,32 @@
     <title>個人化教師日誌</title>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="./src/main.tsx"></script>
+    <!-- 診斷用文字：如果連這行都沒看到，代表部署的版本不對或快取太重 -->
+    <div id="diagnostic-msg" style="position:fixed; top:0; left:0; background:yellow; color:black; font-size:10px; z-index:9999; padding:2px;">
+      [診斷] HTML 已載入 - 20260408-1612
+    </div>
+
+    <div id="root">
+      <div style="font-family: sans-serif; text-align: center; padding: 50px; color: #8b9e87; background: #0a1108; min-height: 100vh;">
+        <h2 style="color: #73ff4b;">系統初始化中...</h2>
+        <p>正在載入模組，請稍候。</p>
+        <div id="error-display" style="color: #ff4b4b; margin-top: 20px; font-family: monospace; text-align: left; display: inline-block; max-width: 80%;"></div>
+      </div>
+    </div>
+
+    <script>
+      // 全域錯誤捕捉：如果 JS 崩潰，直接顯示在螢幕上
+      window.onerror = function(msg, url, line, col, error) {
+        var display = document.getElementById('error-display');
+        if (display) {
+          display.innerHTML = '<div style="border:1px solid red; padding:10px;">' +
+            '<strong>JS 執行錯誤:</strong><br>' + msg + '<br>' +
+            '<small>檔案: ' + url + ' (行: ' + line + ')</small></div>';
+        }
+        return false;
+      };
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
 
