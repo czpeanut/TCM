@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Custom scrollbar for the sci-fi theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0a1108;
+  border-left: 1px solid #4a6b46;
+}
+::-webkit-scrollbar-thumb {
+  background: #4a6b46;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #73ff4b;
+}

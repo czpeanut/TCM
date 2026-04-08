@@ -1,0 +1,253 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: classes
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - name: string (required, max 100 chars)
+    //   - grade: string (required, max 50 chars)
+    //   - school: string (optional, max 100 chars)
+    //   - schoolFeatures: string (optional, max 500 chars)
+    //   - currentProgress: string (optional, max 500 chars)
+    //   - nextQuizContent: string (optional, max 500 chars)
+    //   - lastPromotedYear: number (optional)
+    //   - createdAt: timestamp (optional, immutable)
+    //
+    // Collection: exams
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - classId: string (required, max 100 chars)
+    //   - name: string (required, max 100 chars)
+    //   - date: string (required, YYYY-MM-DD format)
+    //   - scope: string (optional, max 500 chars)
+    //
+    // Collection: students
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - classId: string (required, max 100 chars)
+    //   - name: string (required, max 100 chars)
+    //   - status: string (optional, max 1000 chars)
+    //
+    // Collection: quizScores
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - classId: string (required, max 100 chars)
+    //   - studentId: string (required, max 100 chars)
+    //   - date: string (required, YYYY-MM-DD format)
+    //   - score: number (required, 0-100)
+    //
+    // Collection: classLogs
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required, immutable)
+    //   - classId: string (required, max 100 chars)
+    //   - date: string (required, YYYY-MM-DD format)
+    //   - content: string (required, max 5000 chars)
+    //   - homework: string (optional, max 2000 chars)
+    //   - attendance: map (optional, studentId -> bool)
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // Collection: userProfiles
+    // Document ID: userId
+    // Fields:
+    //   - teacherName: string (required, max 100 chars)
+    //   - email: string (required, max 100 chars)
+    //   - updatedAt: timestamp (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == "ssonic551@gmail.com" && 
+             request.auth.token.email_verified == true;
+    }
+    
+    function userIdUnchanged() {
+      return !('userId' in request.resource.data) ||
+        request.resource.data.userId == request.auth.uid;
+    }
+    
+    function userIdNotModified() {
+      return !('userId' in request.resource.data) ||
+        request.resource.data.userId == resource.data.userId;
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function validStringLength(field, minLen, maxLen) {
+      return request.resource.data[field] is string &&
+        request.resource.data[field].size() >= minLen &&
+        request.resource.data[field].size() <= maxLen;
+    }
+    
+    function validOptionalStringLength(field, maxLen) {
+      return !(field in request.resource.data) ||
+        (request.resource.data[field] is string &&
+         request.resource.data[field].size() <= maxLen);
+    }
+    
+    function isValidDateString(dateStr) {
+      return dateStr is string &&
+        dateStr.matches("^[0-9]{4}-[0-9]{2}-[0-9]{2}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidClass(data) {
+      return hasRequiredFields(['userId', 'name', 'grade']) &&
+             validStringLength('userId', 1, 100) &&
+             validStringLength('name', 1, 100) &&
+             validStringLength('grade', 1, 50) &&
+             validOptionalStringLength('school', 100) &&
+             validOptionalStringLength('schoolFeatures', 500) &&
+             validOptionalStringLength('currentProgress', 500) &&
+             validOptionalStringLength('nextQuizContent', 500) &&
+             (!( 'lastPromotedYear' in data ) || data.lastPromotedYear is number) &&
+             (!( 'createdAt' in data ) || data.createdAt is timestamp);
+    }
+
+    function isValidExam(data) {
+      return hasRequiredFields(['userId', 'classId', 'name', 'date']) &&
+             validStringLength('userId', 1, 100) &&
+             validStringLength('classId', 1, 100) &&
+             validStringLength('name', 1, 100) &&
+             isValidDateString(data.date) &&
+             validOptionalStringLength('scope', 500);
+    }
+
+    function isValidStudent(data) {
+      return hasRequiredFields(['userId', 'classId', 'name']) &&
+             validStringLength('userId', 1, 100) &&
+             validStringLength('classId', 1, 100) &&
+             validStringLength('name', 1, 100) &&
+             validOptionalStringLength('status', 1000) &&
+             validOptionalStringLength('notes', 1000);
+    }
+
+    function isValidQuizScore(data) {
+      return hasRequiredFields(['userId', 'classId', 'studentId', 'date', 'score']) &&
+             validStringLength('userId', 1, 100) &&
+             validStringLength('classId', 1, 100) &&
+             validStringLength('studentId', 1, 100) &&
+             isValidDateString(data.date) &&
+             data.score is number && data.score >= 0 && data.score <= 100;
+    }
+
+    function isValidClassLog(data) {
+      return hasRequiredFields(['userId', 'classId', 'date', 'content', 'createdAt']) &&
+             validStringLength('userId', 1, 100) &&
+             validStringLength('classId', 1, 100) &&
+             isValidDateString(data.date) &&
+             validStringLength('content', 1, 5000) &&
+             validOptionalStringLength('homework', 2000) &&
+             validOptionalStringLength('notes', 2000) &&
+             (!( 'attendance' in data ) || data.attendance is map) &&
+             (!( 'studentEvents' in data ) || data.studentEvents is map) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidUserProfile(data) {
+      return hasRequiredFields(['teacherName', 'email']) &&
+             validStringLength('teacherName', 1, 100) &&
+             validStringLength('email', 1, 100) &&
+             (!( 'updatedAt' in data ) || data.updatedAt is timestamp);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /classes/{classId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && 
+                    isValidClass(request.resource.data) && 
+                    userIdUnchanged();
+      allow update: if isDocOwner() && 
+                    isValidClass(request.resource.data) && 
+                    userIdNotModified() &&
+                    (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /exams/{examId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && 
+                    isValidExam(request.resource.data) && 
+                    userIdUnchanged();
+      allow update: if isDocOwner() && 
+                    isValidExam(request.resource.data) && 
+                    userIdNotModified();
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /students/{studentId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && 
+                    isValidStudent(request.resource.data) && 
+                    userIdUnchanged();
+      allow update: if isDocOwner() && 
+                    isValidStudent(request.resource.data) && 
+                    userIdNotModified();
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /quizScores/{scoreId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && 
+                    isValidQuizScore(request.resource.data) && 
+                    userIdUnchanged();
+      allow update: if isDocOwner() && 
+                    isValidQuizScore(request.resource.data) && 
+                    userIdNotModified();
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /classLogs/{logId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && 
+                    isValidClassLog(request.resource.data) && 
+                    userIdUnchanged();
+      allow update: if isDocOwner() && 
+                    isValidClassLog(request.resource.data) && 
+                    userIdNotModified() &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /userProfiles/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data);
+    }
+  }
+}

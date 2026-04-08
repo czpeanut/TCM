@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "Class": {
+      "title": "Class",
+      "description": "A class managed by the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who owns this class" },
+        "name": { "type": "string", "description": "Name of the class" },
+        "grade": { "type": "string", "description": "Grade level (e.g., 小六, 國一, 高三)" },
+        "school": { "type": "string", "description": "School name" },
+        "schoolFeatures": { "type": "string", "description": "Characteristics of the school's exams" },
+        "currentProgress": { "type": "string", "description": "Current teaching progress" },
+        "nextQuizContent": { "type": "string", "description": "Content for the next quiz" },
+        "lastPromotedYear": { "type": "number", "description": "The last year this class was automatically promoted" },
+        "createdAt": { "type": "timestamp", "description": "Creation time" }
+      },
+      "required": ["userId", "name", "grade"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "An exam for a specific class",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who owns this exam" },
+        "classId": { "type": "string", "description": "The ID of the class" },
+        "name": { "type": "string", "description": "Name of the exam (e.g., 第一次段考)" },
+        "date": { "type": "string", "description": "Date of the exam (YYYY-MM-DD)" },
+        "scope": { "type": "string", "description": "Scope of the exam" }
+      },
+      "required": ["userId", "classId", "name", "date"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "A student in a class",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who owns this student" },
+        "classId": { "type": "string", "description": "The ID of the class" },
+        "name": { "type": "string", "description": "Student's name" },
+        "status": { "type": "string", "description": "Student's learning status or notes" },
+        "notes": { "type": "string", "description": "Additional student notes" }
+      },
+      "required": ["userId", "classId", "name"]
+    },
+    "QuizScore": {
+      "title": "QuizScore",
+      "description": "A student's score for a specific quiz/class session",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who owns this score" },
+        "classId": { "type": "string", "description": "The ID of the class" },
+        "studentId": { "type": "string", "description": "The ID of the student" },
+        "date": { "type": "string", "description": "Date of the quiz (YYYY-MM-DD)" },
+        "score": { "type": "number", "description": "Score achieved" },
+        "progress": { "type": "string", "description": "Class progress for this specific session" }
+      },
+      "required": ["userId", "classId", "studentId", "date", "score"]
+    },
+    "ClassLog": {
+      "title": "ClassLog",
+      "description": "A log entry for a class session",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user who owns this log" },
+        "classId": { "type": "string", "description": "The ID of the class" },
+        "date": { "type": "string", "description": "Date of the log (YYYY-MM-DD)" },
+        "content": { "type": "string", "description": "Content of the log (teaching progress)" },
+        "homework": { "type": "string", "description": "Homework assigned" },
+        "attendance": { "type": "object", "description": "Map of studentId to boolean (present/absent)" },
+        "notes": { "type": "string", "description": "General notes for the session" },
+        "studentEvents": { "type": "object", "description": "Map of studentId to event description" },
+        "createdAt": { "type": "timestamp", "description": "Creation time" }
+      },
+      "required": ["userId", "classId", "date", "content", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information including teacher name",
+      "type": "object",
+      "properties": {
+        "teacherName": { "type": "string", "description": "Name of the teacher" },
+        "email": { "type": "string", "description": "User's email" },
+        "updatedAt": { "type": "timestamp", "description": "Last update time" }
+      },
+      "required": ["teacherName", "email"]
+    }
+  },
+  "firestore": {
+    "/userProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profile information"
+    },
+    "/classes/{classId}": {
+      "schema": { "$ref": "#/entities/Class" },
+      "description": "Stores class information"
+    },
+    "/exams/{examId}": {
+      "schema": { "$ref": "#/entities/Exam" },
+      "description": "Stores exam schedules for classes"
+    },
+    "/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Stores student information"
+    },
+    "/quizScores/{scoreId}": {
+      "schema": { "$ref": "#/entities/QuizScore" },
+      "description": "Stores quiz scores for students"
+    },
+    "/classLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ClassLog" },
+      "description": "Stores class session logs"
+    }
+  }
+}
