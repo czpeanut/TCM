@@ -19,11 +19,28 @@ const isEnvValid = envConfig.apiKey && envConfig.apiKey.startsWith('AIza');
 const finalConfig = isEnvValid ? envConfig : localConfig;
 
 let app;
+const dummyConfig = {
+  apiKey: "missing",
+  authDomain: "missing",
+  projectId: "missing",
+  appId: "missing"
+};
+
 try {
-  app = initializeApp(finalConfig);
+  // 嘗試使用最終配置
+  if (finalConfig && finalConfig.apiKey) {
+    app = initializeApp(finalConfig);
+  } else {
+    throw new Error("No valid Firebase config found");
+  }
 } catch (error) {
-  console.error("Firebase initialization failed with selected config, retrying with localConfig:", error);
-  app = initializeApp(localConfig); 
+  console.error("Firebase initialization failed:", error);
+  // 最後手段：使用虛擬配置防止程式碼崩潰，讓 ErrorBoundary 能捕捉並顯示錯誤
+  try {
+    app = initializeApp(localConfig || dummyConfig);
+  } catch (e) {
+    app = initializeApp(dummyConfig);
+  }
 }
 
 export const db = getFirestore(app, finalConfig.firestoreDatabaseId || '(default)');
