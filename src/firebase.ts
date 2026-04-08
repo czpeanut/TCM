@@ -2,9 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// 嘗試從環境變數讀取，或使用本地配置
-// 注意：在 Vite 中，只有 VITE_ 開頭的變數會暴露給前端
-const firebaseConfig = {
+// 優先從環境變數讀取 (Vite 環境)
+const envConfig = {
   apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || '',
   authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN || '',
   projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID || '',
@@ -13,10 +12,11 @@ const firebaseConfig = {
 };
 
 // 如果環境變數為空，則嘗試使用本地配置檔案 (這在 AI Studio 預覽環境中是必要的)
-// 我們使用動態引入或直接依賴，但為了安全與彈性，我們優先建議使用環境變數
 import localConfig from '../firebase-applet-config.json';
 
-const finalConfig = firebaseConfig.apiKey ? firebaseConfig : localConfig;
+// 判斷環境變數是否有效 (Firebase API Key 通常以 AIza 開頭)
+const isEnvValid = envConfig.apiKey && envConfig.apiKey.startsWith('AIza');
+const finalConfig = isEnvValid ? envConfig : localConfig;
 
 const app = initializeApp(finalConfig);
 export const db = getFirestore(app, finalConfig.firestoreDatabaseId || '(default)');
