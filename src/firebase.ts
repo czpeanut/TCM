@@ -1,10 +1,25 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// 嘗試從環境變數讀取，或使用本地配置
+// 注意：在 Vite 中，只有 VITE_ 開頭的變數會暴露給前端
+const firebaseConfig = {
+  apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || '',
+  authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID || '',
+  appId: (import.meta as any).env.VITE_FIREBASE_APP_ID || '',
+  firestoreDatabaseId: (import.meta as any).env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || '',
+};
+
+// 如果環境變數為空，則嘗試使用本地配置檔案 (這在 AI Studio 預覽環境中是必要的)
+// 我們使用動態引入或直接依賴，但為了安全與彈性，我們優先建議使用環境變數
+import localConfig from '../firebase-applet-config.json';
+
+const finalConfig = firebaseConfig.apiKey ? firebaseConfig : localConfig;
+
+const app = initializeApp(finalConfig);
+export const db = getFirestore(app, finalConfig.firestoreDatabaseId || '(default)');
 export const auth = getAuth(app);
 
 export const loginWithGoogle = async () => {
