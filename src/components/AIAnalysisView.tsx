@@ -7,8 +7,6 @@ import { GoogleGenAI } from '@google/genai';
 import { Brain, Loader2 } from 'lucide-react';
 import Markdown from 'react-markdown';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export default function AIAnalysisView({ user }: { user: User }) {
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -33,10 +31,18 @@ export default function AIAnalysisView({ user }: { user: User }) {
 
   const handleAnalyze = async () => {
     if (!selectedClassId) return;
+    
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      setAnalysis('錯誤：未偵測到 Gemini API Key。請在系統設定中配置 API 金鑰後再試。');
+      return;
+    }
+
     setIsAnalyzing(true);
     setAnalysis('');
 
     try {
+      const ai = new GoogleGenAI({ apiKey });
       // Gather all data for the selected class
       const classData = classes.find(c => c.id === selectedClassId);
       

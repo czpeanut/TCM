@@ -15,7 +15,7 @@ const envConfig = {
 import localConfig from '../firebase-applet-config.json';
 
 // 判斷環境變數是否有效 (Firebase API Key 通常以 AIza 開頭)
-const isEnvValid = envConfig.apiKey && envConfig.apiKey.startsWith('AIza');
+const isEnvValid = !!(envConfig.apiKey && envConfig.apiKey.startsWith('AIza'));
 const finalConfig = isEnvValid ? envConfig : localConfig;
 
 let app;

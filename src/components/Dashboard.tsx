@@ -5,7 +5,6 @@ import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { UserProfileData } from '../types';
 import ClassesView from './ClassesView';
-import AIAnalysisView from './AIAnalysisView';
 import AdminView from './AdminView';
 
 interface DashboardProps {
@@ -13,7 +12,7 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
-type ViewState = 'CLASSES' | 'AI_ANALYSIS' | 'ADMIN';
+type ViewState = 'CLASSES' | 'ADMIN';
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [currentView, setCurrentView] = useState<ViewState>('CLASSES');
@@ -135,14 +134,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <BookOpen size={16} />
             <span>班級管理</span>
           </button>
-          
-          <button 
-            onClick={() => { setCurrentView('AI_ANALYSIS'); setIsMobileMenuOpen(false); }}
-            className={`text-left p-2 border border-transparent hover:border-[#4a6b46] transition-colors flex items-center space-x-2 ${currentView === 'AI_ANALYSIS' ? 'bg-[#d97b29] text-black font-bold' : ''}`}
-          >
-            <Brain size={16} />
-            <span>AI 分析建議</span>
-          </button>
 
           {isAdmin && (
             <button 
@@ -173,7 +164,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
           <div className="h-full p-2 md:p-4 border border-[#4a6b46]/30 bg-[#0a1108]/50 overflow-x-hidden">
             {currentView === 'CLASSES' && <ClassesView user={user} />}
-            {currentView === 'AI_ANALYSIS' && <AIAnalysisView user={user} />}
             {currentView === 'ADMIN' && isAdmin && <AdminView user={user} />}
           </div>
         </main>
