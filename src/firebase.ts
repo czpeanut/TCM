@@ -18,7 +18,14 @@ import localConfig from '../firebase-applet-config.json';
 const isEnvValid = envConfig.apiKey && envConfig.apiKey.startsWith('AIza');
 const finalConfig = isEnvValid ? envConfig : localConfig;
 
-const app = initializeApp(finalConfig);
+let app;
+try {
+  app = initializeApp(finalConfig);
+} catch (error) {
+  console.error("Firebase initialization failed with selected config, retrying with localConfig:", error);
+  app = initializeApp(localConfig); 
+}
+
 export const db = getFirestore(app, finalConfig.firestoreDatabaseId || '(default)');
 export const auth = getAuth(app);
 
